@@ -1,0 +1,350 @@
+/*
+ * Project cards — holographic perforated-ticket design.
+ * From Uiverse.io by dexter-st, ported to CSS Modules and wired to real
+ * project data. The turbulence/bump filter is shared across every card
+ * (defined once in <Projects>, referenced here by id) rather than repeated
+ * per instance.
+ *
+ * Adapted for this site:
+ *   - card is a <Link>, so it needs text-decoration/color resets and a
+ *     focus-visible ring
+ *   - header shows each project's category (short, fits the ticket-stub
+ *     look) instead of the literal word "TICKET"
+ *   - body carries the real title + description instead of lorem ipsum
+ *   - footer's "seat" slot repurposed to show the primary tech, plus a
+ *     small "view project" hint since the card has no separate button
+ *   - decorative "notes" glyphs swapped for stars, echoing this site's
+ *     space theme instead of the reference's concert-ticket theme
+ *   - each card's foil gets a faint tint from that project's own accent
+ *     colour via --_accent, layered under the fixed holographic rainbow
+ */
+
+.cardList {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 3rem 2rem;
+  width: 100%;
+  max-width: 1400px;
+  padding-block: 1rem;
+}
+
+.card {
+  --width: 200px;
+  --height: 380px;
+  --perforation-size: 12px;
+  /*
+   * This is a fixed pixel offset from the top of the card, unrelated to
+   * where the header/body text actually renders. Kept at the reference's
+   * original 70px (tuned for its header font-size + row gap, which are
+   * unchanged here) rather than scaled up with --height — only the body
+   * row stretches to fill the extra height, so scaling this pushed the
+   * line down into the body title instead of leaving it in the header/body
+   * gap.
+   */
+  --cutouts-adjust: 70px;
+
+  position: relative;
+  display: grid;
+  grid-template-rows: auto 1fr auto;
+  gap: 1rem;
+  grid-template-areas:
+    "header"
+    "body"
+    "footer";
+
+  width: var(--width);
+  height: var(--height);
+  padding: var(--perforation-size) 0;
+
+  font-size: 1rem;
+  color: inherit;
+  text-decoration: none;
+  user-select: none;
+  overflow: hidden;
+
+  filter: drop-shadow(0 2px 1px #00000025) drop-shadow(0 4px 3px #00000025)
+    drop-shadow(0 10px 9px #00000025) drop-shadow(0 20px 20px #00000025)
+    drop-shadow(0 40px 40px #00000025);
+  /* smooths the snap-back to rest once the hover-only animation below stops */
+  transition: transform 0.3s ease-out, filter 0.3s ease-out;
+}
+
+.card:focus-visible {
+  outline: 2px solid var(--_accent);
+  outline-offset: 6px;
+}
+
+/* Runs only for the card being interacted with, not all six at once. */
+@media (any-hover) {
+  .card:hover {
+    animation: ticketHover 3s ease infinite;
+    will-change: transform, filter;
+  }
+}
+
+.card:focus-visible {
+  animation: ticketHover 3s ease infinite;
+  will-change: transform, filter;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .card:hover,
+  .card:focus-visible {
+    animation: none;
+  }
+}
+
+@keyframes ticketHover {
+  50% {
+    filter: drop-shadow(0 4px 3px #00000015) drop-shadow(0 6px 6px #00000015)
+      drop-shadow(0 16px 14px #00000015) drop-shadow(0 30px 28px #00000015)
+      drop-shadow(0 60px 60px #00000015);
+    transform: translateY(-7px) scale(1.02);
+  }
+}
+
+/* ---------- perforated + notched shape, foil texture ---------- */
+
+.bg {
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background-color: #fff;
+  filter: url(#ticket-bump);
+  mask:
+    /* top perforations */
+    radial-gradient(
+      circle at 50% 0,
+      #fff0 calc(var(--perforation-size) - 5px),
+      #000 calc(var(--perforation-size) - 4px)
+    ),
+    /* bottom perforations */
+      radial-gradient(
+        circle at 50% 100%,
+        #fff0 calc(var(--perforation-size) - 5px),
+        #000 calc(var(--perforation-size) - 4px)
+      ),
+    /* left notch */
+      radial-gradient(circle 8px at left center, #000 98%, #0000 100%),
+    /* right notch */
+      radial-gradient(circle 8px at right center, #000 98%, #0000 100%),
+    /* cut perforation */
+      repeating-linear-gradient(
+        90deg,
+        #000 10px,
+        #000 15px,
+        #0000 16px,
+        #0000 24px
+      );
+
+  mask-repeat: repeat-x, repeat-x, no-repeat, no-repeat, repeat-x;
+
+  mask-size:
+    calc(var(--perforation-size) * 2) 100%,
+    calc(var(--perforation-size) * 2) 100%,
+    16px 16px,
+    16px 16px,
+    10px 2px;
+
+  mask-position:
+    calc(0.5 * var(--perforation-size)) top,
+    calc(0.5 * var(--perforation-size)) bottom,
+    left var(--cutouts-adjust),
+    right var(--cutouts-adjust),
+    0 calc(var(--cutouts-adjust) + 7px);
+
+  mask-composite: intersect, exclude, add, add;
+}
+
+.holographic {
+  background-image: linear-gradient(
+      to bottom,
+      color-mix(in srgb, var(--_accent) 55%, transparent) 0%,
+      transparent 90%,
+      #0002
+    ),
+    conic-gradient(
+      at 60% 50%,
+      #ccc,
+      #ff6bfe,
+      #00f9f8,
+      #ddd,
+      #0081fd,
+      #eef0bc,
+      #0081fd,
+      #ff6bfe,
+      #0002,
+      #0081fd,
+      #ddd,
+      #01fefb,
+      #ccc
+    );
+}
+
+.holographic::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: radial-gradient(circle at 70% 20%, #f0f, #0000),
+    repeating-radial-gradient(circle at 30% 80%, #fff, #f4a 48px, #eee 150px);
+  mix-blend-mode: color-burn;
+}
+
+.holographic::after {
+  /* Static now — no more colour-cycling animation, just a fixed sheen band. */
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: linear-gradient(to bottom, #f205, #f00, #0f0, #f205);
+  mix-blend-mode: difference;
+}
+
+/* ---------- header: category, ticket-stub style ---------- */
+
+.header {
+  position: relative;
+  grid-area: header;
+  margin: 0 8px;
+  padding-right: 0.6em;
+  text-align: center;
+  text-transform: uppercase;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  z-index: 1;
+  font-family: "Impact", sans-serif;
+  font-size: 1.9rem;
+  letter-spacing: 1px;
+  color: #ffffff9f;
+  text-shadow: 0 0 0 #000;
+  -webkit-text-stroke: #fff 0.5px;
+  mix-blend-mode: difference;
+}
+
+.symbol {
+  position: absolute;
+  top: 1.3em;
+  right: 0px;
+  rotate: 185deg;
+  font-size: 1.1em;
+  color: #fff;
+  line-height: 0.5;
+  opacity: 0.2;
+}
+
+/* ---------- body: real project title + description ---------- */
+
+.body {
+  grid-area: body;
+  margin: 0 1em;
+  padding: 0.5em;
+  z-index: 1;
+  color: #1a1a1a;
+  overflow: hidden;
+}
+
+.bodyTitle {
+  display: block;
+  margin-top: 2px;
+  margin-bottom: 0.4em;
+  font-weight: 700;
+  font-size: 0.95rem;
+  line-height: 1.25;
+}
+
+.bodyDescription {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 5;
+  overflow: hidden;
+  color: #3a3a3a;
+  font-weight: 300;
+  font-size: 0.8rem;
+  line-height: 1.45;
+}
+
+/* ---------- footer: tech "seat", barcode, view hint ---------- */
+
+.footer {
+  grid-area: footer;
+  z-index: 1;
+  margin: 0 1em 1em 1em;
+}
+
+.number {
+  margin-bottom: 0.75rem;
+  text-align: center;
+  color: #000;
+  font-weight: 300;
+  font-size: 0.8rem;
+}
+
+.number .bold {
+  font-weight: 700;
+}
+
+.barcode {
+  justify-self: center;
+  width: 0;
+  height: 32px;
+  margin-inline: auto;
+  box-shadow:
+    0px 0 0 1px #000,
+    5px 0 0 1px #000,
+    7px 0 0 1px #000,
+    11px 0 0 1px #000,
+    15px 0 0 1px #000,
+    16px 0 0 1px #000,
+    22px 0 0 1px #000,
+    27px 0 0 1px #000,
+    30px 0 0 1px #000,
+    35px 0 0 1px #000,
+    36px 0 0 1px #000,
+    39px 0 0 1px #000,
+    43px 0 0 1px #000,
+    47px 0 0 1px #000,
+    50px 0 0 1px #000,
+    55px 0 0 1px #000,
+    59px 0 0 1px #000,
+    60px 0 0 1px #000,
+    64px 0 0 1px #000,
+    69px 0 0 1px #000,
+    70px 0 0 1px #000,
+    74px 0 0 1px #000;
+  transform: translateX(37px);
+}
+
+.viewHint {
+  margin-top: 0.6rem;
+  text-align: center;
+  color: #0009;
+  font-size: 0.65rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+/* ---------- decorative background texture ---------- */
+
+.notes {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  overflow: hidden;
+  text-align: center;
+  color: #e7e7e7;
+  font-size: 4.5rem;
+  mix-blend-mode: color-burn;
+  transform: translateY(20%);
+  pointer-events: none;
+}
+
+.notes:nth-child(2) {
+  transform: translateY(40%);
+}
+.notes:nth-child(3) {
+  transform: translateY(60%);
+}

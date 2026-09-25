@@ -1,0 +1,105 @@
+/*
+ * Recreates the removed encryption-bg.webm, measured from its frames:
+ *   - a 16:9 stage, vertically centred in the section like the <video> was
+ *   - 21 centred rows whose widths follow an ellipse (short at the top and
+ *     bottom, widest in the middle), which is what makes the text a globe
+ *   - a glow ring that ripples outward from the centre every 2.5s
+ * Sizes use cqw so everything scales with the stage width, exactly as the
+ * video did.
+ */
+
+@property --ring {
+  syntax: "<percentage>";
+  inherits: false;
+  initial-value: 0%;
+}
+
+.stage {
+  position: absolute;
+  top: 50%;
+  left: 0;
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  transform: translateY(-50%);
+  container-type: inline-size;
+  pointer-events: none;
+}
+
+/* Scaled to width like the video, the globe is ~3.6px text on a phone.
+   Below md it's enlarged and allowed to run off the sides (the section
+   clips it) so it still reads as a globe filling the section. */
+@media (max-width: 767px) {
+  .stage {
+    left: 50%;
+    width: 240%;
+    transform: translate(-50%, -50%);
+  }
+}
+
+.oval {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 71%;
+  height: calc(var(--rows) * 1.39cqw);
+  transform: translate(-50%, -50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.row {
+  display: flex;
+  justify-content: center;
+  overflow: hidden;
+  height: 1.39cqw;
+  line-height: 1.39cqw;
+  font-size: 0.92cqw;
+  white-space: nowrap;
+}
+
+.base .row {
+  color: rgba(200, 205, 255, 0.1);
+}
+
+.glow {
+  mask-image: radial-gradient(
+    ellipse closest-side at 50% 50%,
+    transparent calc(var(--ring) - 22%),
+    #000 var(--ring),
+    transparent calc(var(--ring) + 22%)
+  );
+  animation: ripple 2.5s linear infinite;
+}
+
+.glow .row {
+  color: #8190ff;
+  text-shadow: 0 0 0.4cqw rgba(99, 102, 241, 0.9);
+}
+
+@keyframes ripple {
+  0% {
+    --ring: 0%;
+    opacity: 0;
+  }
+  12% {
+    opacity: 1;
+  }
+  65% {
+    opacity: 1;
+  }
+  85% {
+    --ring: 120%;
+    opacity: 0;
+  }
+  100% {
+    --ring: 120%;
+    opacity: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .glow {
+    display: none;
+  }
+}
