@@ -3,13 +3,30 @@ import type { Metadata } from "next";
 import { AI_KEYWORDS, PROFILE } from "@/constants";
 
 /**
- * Canonical site URL. Set NEXT_PUBLIC_SITE_URL in the host's environment once
- * the domain is live — metadataBase, canonical links, the Open Graph image,
+ * Canonical site URL — metadataBase, canonical links, the Open Graph image,
  * the sitemap, robots.txt, JSON-LD and llms.txt all resolve against it.
+ *
+ * NEXT_PUBLIC_SITE_URL wins (set it once a custom domain is live); on Vercel
+ * it falls back to the project's production address, which Vercel exposes at
+ * build time. Blank values are skipped and a missing protocol is added, since
+ * `new URL("")` or a bare hostname fails the whole build.
  */
-export const SITE_URL = (
-  process.env.NEXT_PUBLIC_SITE_URL ?? "https://syedshahidnazeer.me"
-).replace(/\/$/, "");
+function resolveSiteUrl() {
+  const candidate = [
+    process.env.NEXT_PUBLIC_SITE_URL,
+    process.env.VERCEL_PROJECT_PRODUCTION_URL,
+  ]
+    .map((v) => v?.trim())
+    .find(Boolean);
+  const url = candidate
+    ? /^https?:\/\//.test(candidate)
+      ? candidate
+      : `https://${candidate}`
+    : "https://syedshahidnazeer.vercel.app";
+  return url.replace(/\/+$/, "");
+}
+
+export const SITE_URL = resolveSiteUrl();
 
 // ~55 chars: fits a Google result title without truncation.
 const title = `${PROFILE.name} | ${PROFILE.title} · GenAI, RAG & NLP`;
